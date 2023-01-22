@@ -5,4 +5,4 @@ for i in range(q):
 print(f"Your item list view:\n{my_lst}")
 for x in range(0, (len(my_lst) - 1),2):
     my_lst[x], my_lst[x+1] = my_lst[x+1], my_lst[x]
-print(f"Ващ измененный список элементов:\n{my_lst}")
+print(f"Ваш измененный список элементов:\n{my_lst}")
