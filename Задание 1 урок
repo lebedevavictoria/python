@@ -1,0 +1,19 @@
+Задание 1
+
+last_name = input("Введите вашу фамилию: ")
+first_name = input("Введите ваше имя: ")
+mid_name = input("Введите ваше отчество: ")
+name = last_name + first_name + mid_name
+for i in range(len(name)):
+   print(name[i])
+   
+   
+Задание 2
+
+def currency_exchange(usd):
+    cur1 = usd/1.17
+    return cur1
+
+usd = float(input("Введите сумму в долларах США: "))
+
+print("Сумма перевода в евро = ",'{:.2f}'.format(currency_exchange(usd)))
