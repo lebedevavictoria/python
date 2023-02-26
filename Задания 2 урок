@@ -1,4 +1,6 @@
-1) import pandas as pd
+1). Загрузить, просмотреть, определить количество строк и склеить 3 датасета: marketing_campaign.csv, users.csv и subscribers.csv.
+
+import pandas as pd
 
 df1 = pd.read_csv('users.csv')
 
