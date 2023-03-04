@@ -1,0 +1,108 @@
+1) Построить воронку конверсий пользователей по полу
+
+dfp = df.groupby('sex')[['home_page', 'search_page', 'payment_page', 'payment_confirmation']].sum().unstack('sex').unstack('sex').reset_index()
+dfp.columns.name = None
+dfp = dfp.rename(columns = {'index':'Page'})
+dfp.head()
+
+
+Page	Female	Male
+0	home_page	45075	45325
+1	search_page	22676	22524
+2	payment_page	3100	2930
+3	payment_confirmation	241	211
+
+
+fig = go.Figure(go.Funnel(
+     y = dfp['Page'],
+     x = dfp['Male'],
+     textinfo = "value + percent previous",
+     name = 'Male',
+     constraintext='outside'
+))
+
+fig.add_trace(go.Funnel(
+     y = dfp['Page'],
+     x = dfp['Female'],
+     textinfo = 'value+percent previous',
+      name = 'Female',
+     constraintext='outside'
+))
+
+fig.update_layout(
+    title = 'Воронка конверсии по полу пользователей',
+    title_x=0.5,
+    autosize=False,
+    width=1200,
+    height=600
+)
+
+fig.show()
+
+
+2) Создать 2 колонки “date”: месяц и день недели
+df['month'] = pd.DatetimeIndex(df['date']).month
+df['weekday'] = pd.DatetimeIndex(df['date']).weekday
+
+df.head()
+
+
+user_id	date	device	sex	home_page	search_page	payment_page	payment_confirmation	month	weekday
+0	450007	2015-02-28	Desktop	Female	1	0	0	0	2	5
+1	756838	2015-01-13	Desktop	Male	1	0	0	0	1	1
+2	568983	2015-04-09	Desktop	Male	1	1	0	0	4	3
+3	190794	2015-02-18	Desktop	Female	1	1	0	0	2	2
+4	537909	2015-01-15	Desktop	Male	1	0	0	0	1	3
+
+
+3)  Определить самый топовый по продажам месяц и день недели с помощью базовых методов агрегации
+
+pd.pivot_table(df, index = 'month', values = 'payment_confirmation', aggfunc = 'sum', margins=True)
+	payment_confirmation
+month	
+1	189
+2	173
+3	44
+4	46
+All	452
+
+Больше всего продаж было в январе (189)
+
+pd.pivot_table(df, index = 'weekday', values = 'payment_confirmation', aggfunc = 'sum', margins=True)
+
+payment_confirmation
+weekday	
+0	77
+1	69
+2	54
+3	66
+4	54
+5	70
+6	62
+All	452
+
+Больше всего продаж в понедельник (77) 
+
+4) Выяснить, в какой день недели больше всего покупают женщины, а в какой мужчины
+
+pd.pivot_table(df, index = 'weekday', columns = 'sex', values = 'payment_confirmation', aggfunc = 'sum', margins=True)
+
+sex	Female	Male	All
+weekday			
+0	43	34	77
+1	40	29	69
+2	30	24	54
+3	31	35	66
+4	26	28	54
+5	36	34	70
+6	35	27	62
+All	241	211	452
+
+В понедельник - больше покупают женщины 43
+в вторник - женщины 40
+в среду - женщины 30
+в четверг - мужчины 35
+в пятницу - мужчины 28
+в субботу - женщины 34
+в воскресенье - женщины 35
+
