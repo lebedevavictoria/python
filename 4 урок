@@ -1,0 +1,157 @@
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+plt.style.use("ggplot")  #using style ggplot
+
+%matplotlib inline
+
+import plotly.graph_objects as go
+import plotly.express as px
+
+f = pd.read_csv('winequality-red.csv', sep = ';')
+
+df.head()
+
+	fixed acidity	volatile acidity	citric acid	residual sugar	chlorides	free sulfur dioxide	total sulfur dioxide	density	pH	sulphates	alcohol	quality
+0	7.4	0.70	0.00	1.9	0.076	11.0	34.0	0.9978	3.51	0.56	9.4	5
+1	7.8	0.88	0.00	2.6	0.098	25.0	67.0	0.9968	3.20	0.68	9.8	5
+2	7.8	0.76	0.04	2.3	0.092	15.0	54.0	0.9970	3.26	0.65	9.8	5
+3	11.2	0.28	0.56	1.9	0.075	17.0	60.0	0.9980	3.16	0.58	9.8	6
+4	7.4	0.70	0.00	1.9	0.076	11.0	34.0	0.9978	3.51	0.56	9.4	5
+
+
+df['good'] = df['quality']
+df.head()
+
+	fixed acidity	volatile acidity	citric acid	residual sugar	chlorides	free sulfur dioxide	total sulfur dioxide	density	pH	sulphates	alcohol	quality	good
+0	7.4	0.70	0.00	1.9	0.076	11.0	34.0	0.9978	3.51	0.56	9.4	5	5
+1	7.8	0.88	0.00	2.6	0.098	25.0	67.0	0.9968	3.20	0.68	9.8	5	5
+2	7.8	0.76	0.04	2.3	0.092	15.0	54.0	0.9970	3.26	0.65	9.8	5	5
+3	11.2	0.28	0.56	1.9	0.075	17.0	60.0	0.9980	3.16	0.58	9.8	6	6
+4	7.4	0.70	0.00	1.9	0.076	11.0	34.0	0.9978	3.51	0.56	9.4	5	5
+
+df['good'] = df['good'].apply(lambda x: 1 if x > 5 else 0)
+
+
+df.head()
+
+	fixed acidity	volatile acidity	citric acid	residual sugar	chlorides	free sulfur dioxide	total sulfur dioxide	density	pH	sulphates	alcohol	quality	good
+0	7.4	0.70	0.00	1.9	0.076	11.0	34.0	0.9978	3.51	0.56	9.4	5	0
+1	7.8	0.88	0.00	2.6	0.098	25.0	67.0	0.9968	3.20	0.68	9.8	5	0
+2	7.8	0.76	0.04	2.3	0.092	15.0	54.0	0.9970	3.26	0.65	9.8	5	0
+3	11.2	0.28	0.56	1.9	0.075	17.0	60.0	0.9980	3.16	0.58	9.8	6	1
+4	7.4	0.70	0.00	1.9	0.076	11.0	34.0	0.9978	3.51	0.56	9.4	5	0
+
+
+filtered_vine = df[df['good'] == 1]
+
+data = filtered_vine['sulphates'].value_counts().reset_index()
+data.head()
+
+
+index	sulphates
+0	0.60	45
+1	0.58	30
+2	0.56	30
+3	0.62	30
+4	0.59	30
+
+lt.figure(figsize = (10,7))
+
+plt.bar(data['index'],data['sulphates'])
+
+plt.title('Количество сульфатов в вине высшего качества')
+plt.xlabel('sulphates')
+plt.ylabel('Количество')
+plt.xticks(rotation = 30)
+
+plt.show()
+
+## можем увидеть, что чаще всего в хорошем вине (по качеству больше 5 баллов ) количество сульфатов находится в пределах от 0 до 1
+
+
+data1 = df.groupby('quality')['alcohol'].agg(count = 'mean').reset_index().sort_values(by = 'quality')
+data1.head()
+
+
+quality	count
+0	3	9.955000
+1	4	10.265094
+2	5	9.899706
+3	6	10.629519
+4	7	11.465913
+
+plt.figure(figsize = (10,7))
+
+plt.plot(data1['quality'], data1['count'])
+
+plt.title('Среднее количество алкоголя в вине')
+plt.xlabel('quality of wine')
+plt.ylabel('alcohol')
+
+plt.show()
+
+## среднее количество алкоголя в вине высшего качества больше, чем в низкокачественном вине 
+
+
+data2 = df.groupby('quality')['fixed acidity'].agg(count = 'mean').reset_index().sort_values(by = 'quality')
+data2.head()
+
+quality	count
+0	3	8.360000
+1	4	7.779245
+2	5	8.167254
+3	6	8.347179
+4	7	8.872362
+
+
+plt.figure(figsize = (10,7))
+
+plt.scatter(data2['quality'], data2['count'])
+
+plt.title('Средний показатель fixed acidy')
+plt.xlabel('quality')
+plt.ylabel('count')
+
+plt.show()
+
+## По графику мы можем увидеть, что в вине повышенного качества (7,8 баллов) уровень кислотности - fixed acidy больше чем у низкокачественного вина
+
+
+plt.figure(figsize = (10,7))
+
+plt.hist(filtered_vine['residual sugar'], bins = 15)
+
+plt.title('Количество остаточного сахара в вине высшего качества')
+plt.xlabel('residual sugar')
+plt.ylabel('quantity')
+
+plt.show()
+
+## По графику мы видим, что чаще всего значение residual sugar для вина высшего качества находится в интервале от 2 до 3 грамм на литр 
+
+
+data3 = df.groupby('quality')['pH'].agg(count = 'mean').reset_index().sort_values(by = 'quality')
+data1.head()
+
+
+quality	count
+0	3	3.398000
+1	4	3.381509
+2	5	3.304949
+3	6	3.318072
+4	7	3.290754
+
+
+plt.figure(figsize = (10,7))
+
+plt.plot(data3['quality'], data3['count'])
+
+plt.title('Средний уровень PH')
+plt.xlabel('quality of wine')
+plt.ylabel('Уровень PH')
+
+plt.show()
+
+## По графику мы можем заметить тенденцю,  уровень PH влияет на качество вина, и чем он ниже, тем вино является наиболее качественным
