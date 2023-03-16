@@ -1,0 +1,151 @@
+import pandas as pd
+import numpy as np
+from scipy.sparse import csr_matrix
+
+df = pd.read_excel('http://archive.ics.uci.edu/ml/machine-learning-databases/00352/Online%20Retail.xlsx')
+df.head()
+
+
+InvoiceNo	StockCode	Description	Quantity	InvoiceDate	UnitPrice	CustomerID	Country
+0	536365	85123A	WHITE HANGING HEART T-LIGHT HOLDER	6	2010-12-01 08:26:00	2.55	17850.0	United Kingdom
+1	536365	71053	WHITE METAL LANTERN	6	2010-12-01 08:26:00	3.39	17850.0	United Kingdom
+2	536365	84406B	CREAM CUPID HEARTS COAT HANGER	8	2010-12-01 08:26:00	2.75	17850.0	United Kingdom
+3	536365	84029G	KNITTED UNION FLAG HOT WATER BOTTLE	6	2010-12-01 08:26:00	3.39	17850.0	United Kingdom
+4	536365	84029E	RED WOOLLY HOTTIE WHITE HEART.	6	2010-12-01 08:26:00	3.39	17850.0	United Kingdom
+
+df.shape
+(541909, 8)
+
+
+df = df.loc[df['Quantity'] > 0]
+
+df = df.dropna(subset=['CustomerID'])
+
+item_customer = df.pivot_table(index='StockCode', columns='CustomerID', values='Quantity', aggfunc='sum')
+item_customer.head()
+
+
+item_customer = item_customer.applymap(lambda x: 1 if x > 0 else 0)
+item_customer.head()
+
+
+
+m = item_customer.values
+m
+
+array([[0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       ...,
+       [0, 0, 0, ..., 0, 1, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 1, ..., 0, 0, 0]], dtype=int64)
+       
+       
+  def cos_sim(array):
+  csr_array = csr_matrix(array)
+  numerator = np.dot(csr_array,csr_array.T).toarray()
+  denomenator = np.linalg.norm(array, axis = 1, keepdims = True)*np.linalg.norm(array.T, axis = 0, keepdims = True)
+  return numerator / denomenator 
+  
+  
+  item_item_sim_matrix = cos_sim(m)
+item_item_sim_matrix
+
+array([[1.        , 0.        , 0.09486833, ..., 0.06691496, 0.        ,
+        0.07821652],
+       [0.        , 1.        , 0.        , ..., 0.01618174, 0.        ,
+        0.        ],
+       [0.09486833, 0.        , 1.        , ..., 0.07053456, 0.        ,
+        0.01099299],
+       ...,
+       [0.06691496, 0.01618174, 0.07053456, ..., 1.        , 0.        ,
+        0.0775386 ],
+       [0.        , 0.        , 0.        , ..., 0.        , 1.        ,
+        0.        ],
+       [0.07821652, 0.        , 0.01099299, ..., 0.0775386 , 0.        ,
+        1.        ]])
+        
+   item_item_sim_matrix = pd.DataFrame(item_item_sim_matrix)
+
+item_item_sim_matrix.columns = item_customer.index
+
+item_item_sim_matrix['CustomerID'] = item_customer.index
+item_item_sim_matrix = item_item_sim_matrix.set_index('CustomerID')
+
+item_item_sim_matrix.head()
+
+
+StockCode	10002	10080	10120	10125	10133	10135	11001	15030	15034	15036	...	90214V	90214W	90214Y	90214Z	BANK CHARGES	C2	DOT	M	PADS	POST
+CustomerID																					
+10002	1.000000	0.000000	0.094868	0.090351	0.062932	0.098907	0.095346	0.047673	0.075593	0.090815	...	0.0	0.0	0.0	0.0	0.0	0.029361	0.0	0.066915	0.000000	0.078217
+10080	0.000000	1.000000	0.000000	0.032774	0.045655	0.047836	0.000000	0.000000	0.082261	0.049413	...	0.0	0.0	0.0	0.0	0.0	0.000000	0.0	0.016182	0.000000	0.000000
+10120	0.094868	0.000000	1.000000	0.057143	0.059702	0.041703	0.060302	0.060302	0.095618	0.028718	...	0.0	0.0	0.0	0.0	0.0	0.000000	0.0	0.070535	0.000000	0.010993
+10125	0.090351	0.032774	0.057143	1.000000	0.042644	0.044682	0.043073	0.000000	0.051224	0.030770	...	0.0	0.0	0.0	0.0	0.0	0.000000	0.0	0.070535	0.000000	0.070669
+10133	0.062932	0.045655	0.059702	0.042644	1.000000	0.280097	0.045002	0.060003	0.071358	0.057152	...	0.0	0.0	0.0	0.0	0.0	0.036955	0.0	0.070185	0.049752	0.021877
+
+m1 = item_item_sim_matrix.loc[23166].sort_values(ascending=False)
+m1.head(10)
+
+StockCode
+23166    1.000000
+23165    0.671897
+23167    0.659551
+22993    0.274724
+23307    0.262526
+22722    0.249053
+22720    0.249002
+22666    0.247110
+23243    0.246397
+22961    0.242447
+Name: 23166, dtype: float64
+
+A = item_item_sim_matrix.loc[23166]
+customer_bought_A = A[A>0].index.tolist()
+customer_bought_A
+
+
+B = item_item_sim_matrix.loc[23165]
+customer_bought_B = B[B>0].index.tolist()
+customer_bought_B
+
+
+customer_to_recommend_to_A = set(customer_bought_B) - set(customer_bought_A)
+customer_to_recommend_to_A
+
+
+stock = df.loc[df['StockCode'].isin(customer_bought_A), ['StockCode', 'Description']].drop_duplicates().set_index('StockCode')
+stock.head(10)
+
+Description
+StockCode	
+85123A	WHITE HANGING HEART T-LIGHT HOLDER
+71053	WHITE METAL LANTERN
+84406B	CREAM CUPID HEARTS COAT HANGER
+84029G	KNITTED UNION FLAG HOT WATER BOTTLE
+84029E	RED WOOLLY HOTTIE WHITE HEART.
+22752	SET 7 BABUSHKA NESTING BOXES
+21730	GLASS STAR FROSTED T-LIGHT HOLDER
+22633	HAND WARMER UNION JACK
+22632	HAND WARMER RED POLKA DOT
+84879	ASSORTED COLOUR BIRD ORNAMENT
+
+
+df.loc[df['StockCode'].isin(customer_to_recommend_to_A), ['StockCode', 'Description']].drop_duplicates().set_index('StockCode')
+
+
+Description
+StockCode	
+17091A	LAVENDER INCENSE IN TIN
+21651	HANGING GLASS ETCHED TEALIGHT
+21814	HEART T-LIGHT HOLDER
+84569B	PACK 3 FIRE ENGINE/CAR PATCHES
+21694	SMALL REGAL SILVER CANDLEPOT
+...	...
+90050	CRACKED GLAZE NECKLACE IVORY
+90116	FRUIT SALAD BAG CHARM
+21344	MOROCCAN BEATEN METAL DISH
+23465	TUSCAN VILLA FEEDING STATION
+23465	TUSCAN VILLA BIRD FEEDER
+88 rows × 1 columns
+
