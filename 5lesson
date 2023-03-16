@@ -1,0 +1,76 @@
+1)
+import numpy as np
+import pandas as pd
+import scipy.stats as stats
+import matplotlib.pyplot as plt
+from matplotlib.ticker import PercentFormatter
+import seaborn as sns 
+
+
+df = pd.read_csv('marketing_campaign.csv', header = 0, sep = ',', index_col = None)
+df.head()
+
+	user_id	date_served	marketing_channel	variant	language_displayed	converted
+0	a1000	1/1/18	House Ads	personalization	English	True
+1	a1001	1/1/18	House Ads	personalization	English	True
+2	a1002	1/1/18	House Ads	personalization	English	True
+3	a1003	1/1/18	House Ads	personalization	English	True
+4	a1004	1/1/18	House Ads	personalization	English	True
+
+data = df.groupby('variant')['converted'].agg(['sum', 'count']).reset_index()
+data = data.set_index('variant')
+data['CR'] = data['sum'] / data['count']
+data = data.rename(columns = {'sum': 'converted'})
+data
+
+
+
+converted	count	CR
+variant			
+control	371	5076	0.073089
+personalization	705	4946	0.142539
+
+
+print(f" Конверсия в варианте control -  {data.loc['control', 'CR']: .0%}, конверсия в варианте personalization - {data.loc['personalization', 'CR']: .0%}")
+
+Конверсия в варианте control -   7%, конверсия в варианте personalization -  14%
+
+data['lost'] = data['count'] - data['converted']
+data = data.drop(['count', 'CR'], axis=1) 
+data
+
+	converted	lost
+variant		
+control	371	4705
+personalization	705	4241
+
+result = stats.chi2_contingency(data, correction = False)
+chisq, pvalue = result[:2] 
+print('chisq = {}, pvalue = {}'.format(chisq, pvalue))
+
+chisq = 126.07767827548582, pvalue = 2.9568009705199523e-29
+
+##Вариант теста personalization дает статистически большую конверсию чем вариант control
+
+
+2)
+from scipy.optimize import Bounds
+from scipy.optimize import minimize
+def value(x):
+    return - 45*x[0] - 80*x[1]   
+    
+
+neq_cons = {'type': 'ineq',
+       'fun': lambda x: np.array ([400 - 5 * x [0] - 20 * x [1],
+                                   450 - 10 * x [0] - 15 * x [1]])}
+bnds = Bounds([0, 0], [np.inf, np.inf])
+x0 = np.array([10, 10])
+res = minimize(value, x0, method='SLSQP', constraints=neq_cons, bounds=bnds)
+res.x
+
+
+array([24., 14.])
+
+print(f"Максимальная прибыль {-value([24, 14])} USD достигается при производстве {round(res.x[0], 0)} стульев и {round(res.x[1], 0)} столов. При этом затрачивается {5 * round(res.x[0], 0) + 20 * round(res.x[1], 0)} единиц материала и {10 * round(res.x[0], 0) + 15 * round(res.x[1], 0)} человеко-часов")
+
+Максимальная прибыль 2200 USD достигается при производстве 24.0 стульев и 14.0 столов. При этом затрачивается 400.0 единиц материала и 450.0 человеко-часов
