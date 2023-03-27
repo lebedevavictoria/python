@@ -1,0 +1,334 @@
+from matplotlib import pyplot as plt
+%matplotlib inline
+import seaborn as sns
+import pandas as pd
+import numpy as np
+from sklearn.datasets import load_wine
+from sklearn.preprocessing import Normalizer, StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+
+wine_data = load_wine()
+print(wine_data['DESCR'])
+
+Output exceeds the size limit. Open the full output data in a text editor
+.. _wine_dataset:
+
+Wine recognition dataset
+------------------------
+
+**Data Set Characteristics:**
+
+    :Number of Instances: 178 (50 in each of three classes)
+    :Number of Attributes: 13 numeric, predictive attributes and the class
+    :Attribute Information:
+ 		- Alcohol
+ 		- Malic acid
+ 		- Ash
+		- Alcalinity of ash  
+ 		- Magnesium
+		- Total phenols
+ 		- Flavanoids
+ 		- Nonflavanoid phenols
+ 		- Proanthocyanins
+		- Color intensity
+ 		- Hue
+ 		- OD280/OD315 of diluted wines
+ 		- Proline
+
+    - class:
+...
+  Tech. Rep. no. 92-01, (1992), Dept. of Computer Science and Dept. of 
+  Mathematics and Statistics, James Cook University of North Queensland. 
+  (Also submitted to Journal of Chemometrics).
+  
+  x = pd.DataFrame(wine_data.data, columns=wine_data.feature_names)
+y = wine_data.target
+
+x_corr = x.copy()
+x_corr['MEDV'] = y
+correlation_matrix = x_corr.corr().round(2)
+plt.subplots(figsize=(10,7))
+sns.heatmap(data=correlation_matrix, annot=True)
+
+# Пробуем первый набор признаков
+features = [['hue','malic_acid'], ['hue','malic_acid', 'color_intensity'], ['hue','malic_acid', 'color_intensity', 'total_phenols'], ['flavanoids', 'nonflavanoid_phenols'], ['flavanoids', 'malic_acid']]
+
+
+metrics = pd.DataFrame(columns=['Features', 'MAE train', 'MAE test', 'MSE train', 'MSE test', 'R2 train', 'R2 test'])
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 200)
+
+for future in features:
+  x_future_test = x.loc[:, future]
+  x_train, x_test, y_train, y_test = train_test_split(x_future_test, y, test_size = 0.2, random_state=5)
+
+  transformer = Normalizer().fit(x_train.loc[:, x_train.columns])
+  x_train = pd.DataFrame(transformer.transform(x_train.loc[:, x_train.columns]), index = x_train.index, columns = x_train.columns)
+  x_test = pd.DataFrame(transformer.transform(x_test.loc[:, x_test.columns]), index = x_test.index, columns = x_test.columns)
+
+  regr = LinearRegression()
+  regr.fit(x_train, y_train)
+  pred_train = regr.predict(x_train)
+  pred_test = regr.predict(x_test)
+  
+  metrics = metrics.append({'Features' : future, 
+                            'MAE train' : mean_absolute_error(y_train, pred_train), 
+                            'MAE test' : mean_absolute_error(y_test, pred_test), 
+                            'MSE train' : mean_squared_error(y_train, pred_train), 
+                            'MSE test' : mean_squared_error(y_test, pred_test), 
+                            'R2 train' : r2_score(y_train, pred_train), 
+                            'R2 test' : r2_score(y_test, pred_test)}, ignore_index=True)
+
+print(metrics)
+
+                     Features  MAE train  MAE test  MSE train  MSE test  R2 train   R2 test
+0                                  [hue, malic_acid]   0.467313  0.588726   0.301723  0.467802  0.477324  0.259742
+1                 [hue, malic_acid, color_intensity]   0.612299  0.714048   0.476168  0.639457  0.175133 -0.011887
+2  [hue, malic_acid, color_intensity, total_phenols]   0.479598  0.560393   0.307380  0.370043  0.467525  0.414437
+3                 [flavanoids, nonflavanoid_phenols]   0.354422  0.426153   0.198896  0.268296  0.655452  0.575444
+4                           [flavanoids, malic_acid]   0.373716  0.474226   0.196096  0.304577  0.660303  0.518032
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\1596408633.py:18: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\1596408633.py:18: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\1596408633.py:18: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\1596408633.py:18: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\1596408633.py:18: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+  
+  # Пробуем второй набор признаков
+features_2 = [['malic_acid', 'flavanoids'], ['malic_acid', 'flavanoids', 'nonflavanoid_phenols'], ['malic_acid', 'flavanoids', 'nonflavanoid_phenols', 'proline'], ['proline', 'alcalinity_of_ash'], ['proanthocyanins', 'nonflavanoid_phenols']]
+
+metrics = pd.DataFrame(columns=['Features', 'MAE train', 'MAE test', 'MSE train', 'MSE test', 'R2 train', 'R2 test'])
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 200)
+
+for future in features_2:
+  x_future_test = x.loc[:, future]
+  x_train, x_test, y_train, y_test = train_test_split(x_future_test, y, test_size = 0.2, random_state=5)
+
+  transformer = Normalizer().fit(x_train.loc[:, x_train.columns])
+  x_train = pd.DataFrame(transformer.transform(x_train.loc[:, x_train.columns]), index = x_train.index, columns = x_train.columns)
+  x_test = pd.DataFrame(transformer.transform(x_test.loc[:, x_test.columns]), index = x_test.index, columns = x_test.columns)
+
+  regr = LinearRegression()
+  regr.fit(x_train, y_train)
+  pred_train = regr.predict(x_train)
+  pred_test = regr.predict(x_test)
+  
+  metrics = metrics.append({'Features' : future, 
+                            'MAE train' : mean_absolute_error(y_train, pred_train), 
+                            'MAE test' : mean_absolute_error(y_test, pred_test), 
+                            'MSE train' : mean_squared_error(y_train, pred_train), 
+                            'MSE test' : mean_squared_error(y_test, pred_test), 
+                            'R2 train' : r2_score(y_train, pred_train), 
+                            'R2 test' : r2_score(y_test, pred_test)}, ignore_index=True)
+
+print(metrics)
+
+                                           Features  MAE train  MAE test  MSE train  MSE test  R2 train   R2 test
+0                           [malic_acid, flavanoids]   0.373716  0.474226   0.196096  0.304577  0.660303  0.518032
+1     [malic_acid, flavanoids, nonflavanoid_phenols]   0.340482  0.436966   0.161554  0.254242  0.720140  0.597683
+2  [malic_acid, flavanoids, nonflavanoid_phenols,...   0.420252  0.508355   0.246430  0.346749  0.573109  0.451299
+3                       [proline, alcalinity_of_ash]   0.433737  0.473174   0.249844  0.325929  0.567194  0.484245
+4            [proanthocyanins, nonflavanoid_phenols]   0.483701  0.593180   0.329173  0.442778  0.429773  0.299341
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\1858527659.py:18: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\1858527659.py:18: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\1858527659.py:18: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\1858527659.py:18: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\1858527659.py:18: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+  
+  from xgboost import XGBRegressor
+
+
+metrics = pd.DataFrame(columns=['Features', 'MAE train', 'MAE test', 'MSE train', 'MSE test', 'R2 train', 'R2 test'])
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 200)
+
+for future in features_2:
+  x_future_test = x.loc[:, future]
+  x_train, x_test, y_train, y_test = train_test_split(x_future_test, y, test_size = 0.2, random_state=5)
+
+  transformer = Normalizer().fit(x_train.loc[:, x_train.columns])
+  x_train = pd.DataFrame(transformer.transform(x_train.loc[:, x_train.columns]), index = x_train.index, columns = x_train.columns)
+  x_test = pd.DataFrame(transformer.transform(x_test.loc[:, x_test.columns]), index = x_test.index, columns = x_test.columns)
+
+  regr = XGBRegressor(n_estimators = 13)
+  regr.fit(x_train, y_train)
+  pred_train = regr.predict(x_train)
+  pred_test = regr.predict(x_test)
+  
+  metrics = metrics.append({'Features' : future, 
+                            'MAE train' : mean_absolute_error(y_train, pred_train), 
+                            'MAE test' : mean_absolute_error(y_test, pred_test), 
+                            'MSE train' : mean_squared_error(y_train, pred_train), 
+                            'MSE test' : mean_squared_error(y_test, pred_test), 
+                            'R2 train' : r2_score(y_train, pred_train), 
+                            'R2 test' : r2_score(y_test, pred_test)}, ignore_index=True)
+
+print(metrics)
+
+                                           Features  MAE train  MAE test  MSE train  MSE test  R2 train   R2 test
+0                           [malic_acid, flavanoids]   0.161785  0.355690   0.048952  0.261167  0.915201  0.586725
+1     [malic_acid, flavanoids, nonflavanoid_phenols]   0.049660  0.299052   0.006154  0.251394  0.989339  0.602190
+2  [malic_acid, flavanoids, nonflavanoid_phenols,...   0.015541  0.293365   0.000783  0.345584  0.998643  0.453142
+3                       [proline, alcalinity_of_ash]   0.200573  0.467131   0.071939  0.530530  0.875381  0.160479
+4            [proanthocyanins, nonflavanoid_phenols]   0.232989  0.735936   0.079769  0.728519  0.861816 -0.152821
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\2601394724.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\2601394724.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\2601394724.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\2601394724.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\2601394724.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+  
+  from sklearn.ensemble import RandomForestRegressor
+
+
+metrics = pd.DataFrame(columns=['Features', 'MAE train', 'MAE test', 'MSE train', 'MSE test', 'R2 train', 'R2 test'])
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 200)
+
+for future in features_2:
+  x_future_test = x.loc[:, future]
+  x_train, x_test, y_train, y_test = train_test_split(x_future_test, y, test_size = 0.2, random_state=5)
+
+  transformer = Normalizer().fit(x_train.loc[:, x_train.columns])
+  x_train = pd.DataFrame(transformer.transform(x_train.loc[:, x_train.columns]), index = x_train.index, columns = x_train.columns)
+  x_test = pd.DataFrame(transformer.transform(x_test.loc[:, x_test.columns]), index = x_test.index, columns = x_test.columns)
+
+  regr = RandomForestRegressor()
+  regr.fit(x_train, y_train)
+  pred_train = regr.predict(x_train)
+  pred_test = regr.predict(x_test)
+  
+  metrics = metrics.append({'Features' : future, 
+                            'MAE train' : mean_absolute_error(y_train, pred_train), 
+                            'MAE test' : mean_absolute_error(y_test, pred_test), 
+                            'MSE train' : mean_squared_error(y_train, pred_train), 
+                            'MSE test' : mean_squared_error(y_test, pred_test), 
+                            'R2 train' : r2_score(y_train, pred_train), 
+                            'R2 test' : r2_score(y_test, pred_test)}, ignore_index=True)
+
+print(metrics)
+
+regr.feature_importances_
+
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\439468588.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\439468588.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\439468588.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+                                            Features  MAE train  MAE test  MSE train  MSE test  R2 train   R2 test
+0                           [malic_acid, flavanoids]   0.142746  0.331944   0.042713  0.272586  0.926008  0.568655
+1     [malic_acid, flavanoids, nonflavanoid_phenols]   0.111549  0.289722   0.027393  0.198931  0.952547  0.685209
+2  [malic_acid, flavanoids, nonflavanoid_phenols,...   0.059225  0.290278   0.014573  0.327592  0.974756  0.481613
+3                       [proline, alcalinity_of_ash]   0.155615  0.445046   0.055394  0.504455  0.904041  0.201742
+4            [proanthocyanins, nonflavanoid_phenols]   0.199600  0.761852   0.069185  0.808635  0.880150 -0.279598
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\439468588.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\439468588.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+
+
+from lightgbm import LGBMRegressor
+
+
+metrics = pd.DataFrame(columns=['Features', 'MAE train', 'MAE test', 'MSE train', 'MSE test', 'R2 train', 'R2 test'])
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 200)
+
+for future in features_2:
+  x_future_test = x.loc[:, future]
+  x_train, x_test, y_train, y_test = train_test_split(x_future_test, y, test_size = 0.2, random_state=5)
+
+  transformer = Normalizer().fit(x_train.loc[:, x_train.columns])
+  x_train = pd.DataFrame(transformer.transform(x_train.loc[:, x_train.columns]), index = x_train.index, columns = x_train.columns)
+  x_test = pd.DataFrame(transformer.transform(x_test.loc[:, x_test.columns]), index = x_test.index, columns = x_test.columns)
+
+  regr = LGBMRegressor()
+  regr.fit(x_train, y_train)
+  pred_train = regr.predict(x_train)
+  pred_test = regr.predict(x_test)
+  
+  metrics = metrics.append({'Features' : future, 
+                            'MAE train' : mean_absolute_error(y_train, pred_train), 
+                            'MAE test' : mean_absolute_error(y_test, pred_test), 
+                            'MSE train' : mean_squared_error(y_train, pred_train), 
+                            'MSE test' : mean_squared_error(y_test, pred_test), 
+                            'R2 train' : r2_score(y_train, pred_train), 
+                            'R2 test' : r2_score(y_test, pred_test)}, ignore_index=True)
+
+print(metrics)
+
+                                           Features  MAE train  MAE test  MSE train  MSE test  R2 train   R2 test
+0                           [malic_acid, flavanoids]   0.288002  0.405412   0.149171  0.293181  0.741591  0.536065
+1     [malic_acid, flavanoids, nonflavanoid_phenols]   0.229911  0.349097   0.096262  0.224617  0.833244  0.644562
+2  [malic_acid, flavanoids, nonflavanoid_phenols,...   0.114686  0.338839   0.031149  0.279210  0.946041  0.558174
+3                       [proline, alcalinity_of_ash]   0.302838  0.402533   0.160135  0.362725  0.722597  0.426018
+4            [proanthocyanins, nonflavanoid_phenols]   0.450568  0.612774   0.266467  0.450767  0.538399  0.286699
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\85682291.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\85682291.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\85682291.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\85682291.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+C:\Users\zausa\AppData\Local\Temp\ipykernel_3092\85682291.py:21: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  metrics = metrics.append({'Features' : future,
+  
+  регрессия: MAE MSE RMSE R2-score MAPE WAPE
+классификация: (Если данные сбалансированы) accuracy roc-curve ИНАЧЕ: recall precision roc-auc f1-score
+
+from sklearn.ensemble import RandomForestRegressor
+
+
+metrics = pd.DataFrame(columns=['Features', 'MAE train', 'MAE test', 'MSE train', 'MSE test', 'R2 train', 'R2 test'])
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 200)
+
+
+x_future_test = x.copy()
+x_train, x_test, y_train, y_test = train_test_split(x_future_test, y, test_size = 0.2, random_state=5)
+
+transformer = Normalizer().fit(x_train.loc[:, x_train.columns])
+x_train = pd.DataFrame(transformer.transform(x_train.loc[:, x_train.columns]), index = x_train.index, columns = x_train.columns)
+x_test = pd.DataFrame(transformer.transform(x_test.loc[:, x_test.columns]), index = x_test.index, columns = x_test.columns)
+
+regr = RandomForestRegressor()
+regr.fit(x_train, y_train)
+pred_train = regr.predict(x_train)
+pred_test = regr.predict(x_test)
+
+
+regr.feature_importances_
+
+array([0.01886117, 0.01327595, 0.0096996 , 0.46128408, 0.0096469 ,
+       0.0026103 , 0.08777678, 0.05549714, 0.00124567, 0.09854754,
+       0.03445435, 0.12819526, 0.07890526])
+       
+import matplotlib.pyplot as plt
+
+
+plt.figure()
+plt.barh(x.columns, regr.feature_importances_)
+plt.yticks(rotation=35)
+plt.show()
+
+
+
